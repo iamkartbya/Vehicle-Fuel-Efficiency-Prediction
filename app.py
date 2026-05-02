@@ -5,11 +5,7 @@ import numpy as np
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
-from database import init_db, save_prediction, get_history, find_or_create_user, get_user_by_id, register_user, login_user
-from auth import (
-    GoogleOAuth, FacebookOAuth, TelegramOAuth,
-    login_required, get_current_user, logout_user
-)
+from database import init_db, save_prediction, get_history
 import config
 
 load_dotenv()
@@ -32,30 +28,20 @@ init_db()
 
 @app.route("/")
 def index():
-    user = get_current_user()
-    if user:
-        history = get_history(user_id=user[0])
-    else:
-        history = []
-    return render_template("index.html", history=history, user=user)
+    history = get_history()
+    return render_template("index.html", history=history)
 
 @app.route("/compare")
 def compare():
-    user = get_current_user()
-    return render_template("compare.html", user=user)
+    return render_template("compare.html")
 
 @app.route("/dashboard")
 def dashboard():
-    user = get_current_user()
-    return render_template("dashboard.html", user=user)
+    return render_template("dashboard.html")
 
 @app.route("/predict", methods=["POST"])
-@login_required
 def predict():
     try:
-        user = get_current_user()
-        user_id = user[0] if user else None
-        
         data = request.get_json()
         features = {
             "cylinders":    float(data["cylinders"]),
@@ -74,7 +60,7 @@ def predict():
         ]])
         arr_scaled = SCALER.transform(arr)
         mpg = round(float(MODEL.predict(arr_scaled)[0]), 2)
-        save_prediction(user_id, features, mpg)
+        save_prediction(None, features, mpg)
         return jsonify({"success": True, "mpg": mpg})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
@@ -101,209 +87,14 @@ def validate_input(data):
         return "Invalid input format"
 
 @app.route("/history")
-@login_required
 def history():
-    user = get_current_user()
-    rows = get_history(user_id=user[0])
+    rows = get_history()
     result = [
         {"id": r[0], "cylinders": r[1], "displacement": r[2], "horsepower": r[3],
          "weight": r[4], "predicted_mpg": r[5], "created_at": r[6]}
         for r in rows
     ]
     return jsonify(result)
-
-# ──────────────────────────────────────────
-# Authentication Routes
-# ──────────────────────────────────────────
-
-@app.route("/login")
-def login():
-    """Display login page with OAuth options"""
-    return render_template("login.html",
-                          google_auth_url=GoogleOAuth.get_auth_url(),
-                          facebook_auth_url=FacebookOAuth.get_auth_url(),
-                          telegram_login_url=TelegramOAuth.generate_login_url())
-
-@app.route("/auth/callback/google")
-def google_callback():
-    """Handle Google OAuth callback"""
-    code = request.args.get('code')
-    if not code:
-        return redirect(url_for('login'))
-    
-    try:
-        token_data = GoogleOAuth.get_token(code)
-        if not token_data or 'access_token' not in token_data:
-            return redirect(url_for('login'))
-        
-        user_info = GoogleOAuth.get_user_info(token_data['access_token'])
-        if not user_info:
-            return redirect(url_for('login'))
-        
-        user_id = find_or_create_user(
-            provider=user_info['provider'],
-            provider_id=user_info['provider_id'],
-            email=user_info['email'],
-            name=user_info['name'],
-            profile_picture=user_info['picture']
-        )
-        
-        session['user_id'] = user_id
-        session.permanent = True
-        
-        return redirect(url_for('index'))
-    except Exception as e:
-        print(f"Google auth error: {e}")
-        return redirect(url_for('login'))
-
-@app.route("/auth/callback/facebook")
-def facebook_callback():
-    """Handle Facebook OAuth callback"""
-    code = request.args.get('code')
-    if not code:
-        return redirect(url_for('login'))
-    
-    try:
-        token_data = FacebookOAuth.get_token(code)
-        if not token_data or 'access_token' not in token_data:
-            return redirect(url_for('login'))
-        
-        user_info = FacebookOAuth.get_user_info(token_data['access_token'])
-        if not user_info:
-            return redirect(url_for('login'))
-        
-        user_id = find_or_create_user(
-            provider=user_info['provider'],
-            provider_id=user_info['provider_id'],
-            email=user_info['email'],
-            name=user_info['name'],
-            profile_picture=user_info['picture']
-        )
-        
-        session['user_id'] = user_id
-        session.permanent = True
-        
-        return redirect(url_for('index'))
-    except Exception as e:
-        print(f"Facebook auth error: {e}")
-        return redirect(url_for('login'))
-
-@app.route("/auth/callback/telegram", methods=['GET', 'POST'])
-def telegram_callback():
-    """Handle Telegram OAuth callback"""
-    try:
-        if request.method == 'POST':
-            data = request.get_json()
-        else:
-            data = request.args.to_dict()
-        
-        user_info = TelegramOAuth.parse_telegram_user(data)
-        if not user_info:
-            return jsonify({"error": "Invalid Telegram authentication"}), 401
-        
-        user_id = find_or_create_user(
-            provider=user_info['provider'],
-            provider_id=user_info['provider_id'],
-            email=user_info['email'],
-            name=user_info['name'],
-            profile_picture=user_info.get('picture')
-        )
-        
-        session['user_id'] = user_id
-        session.permanent = True
-        
-        return redirect(url_for('index'))
-    except Exception as e:
-        print(f"Telegram auth error: {e}")
-        return redirect(url_for('login'))
-
-@app.route("/logout")
-def logout():
-    """Logout user"""
-    logout_user()
-    return redirect(url_for('login'))
-
-# ──────────────────────────────────────────
-# Manual Authentication Routes
-# ──────────────────────────────────────────
-
-@app.route("/auth/signup", methods=['POST'])
-def signup():
-    """Handle user registration"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-        name = data.get('name', '').strip()
-        password = data.get('password', '')
-        confirm_password = data.get('confirm_password', '')
-        
-        # Validation
-        if not email or not name or not password:
-            return jsonify({"success": False, "error": "All fields are required"}), 400
-        
-        if password != confirm_password:
-            return jsonify({"success": False, "error": "Passwords do not match"}), 400
-        
-        if len(password) < 6:
-            return jsonify({"success": False, "error": "Password must be at least 6 characters"}), 400
-        
-        # Register user
-        user_id, message = register_user(email, name, password)
-        
-        if not user_id:
-            return jsonify({"success": False, "error": message}), 400
-        
-        # Set session
-        session['user_id'] = user_id
-        session.permanent = True
-        
-        return jsonify({"success": True, "message": "Registration successful", "redirect": url_for('index')})
-    
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@app.route("/auth/login-manual", methods=['POST'])
-def login_manual():
-    """Handle manual login with email and password"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-        password = data.get('password', '')
-        
-        # Validation
-        if not email or not password:
-            return jsonify({"success": False, "error": "Email and password are required"}), 400
-        
-        # Login user
-        user_id, message = login_user(email, password)
-        
-        if not user_id:
-            return jsonify({"success": False, "error": message}), 401
-        
-        # Set session
-        session['user_id'] = user_id
-        session.permanent = True
-        
-        return jsonify({"success": True, "message": "Login successful", "redirect": url_for('index')})
-    
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/user/profile")
-@login_required
-def user_profile():
-    """Get current user profile"""
-    user = get_current_user()
-    if user:
-        return jsonify({
-            "id": user[0],
-            "provider": user[1],
-            "email": user[2],
-            "name": user[3],
-            "profile_picture": user[4]
-        })
-    return jsonify({"error": "User not found"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True)
