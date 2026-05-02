@@ -6,8 +6,6 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 from database import init_db, save_prediction, get_history
-import config
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -97,4 +95,6 @@ def history():
     return jsonify(result)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port) 
