@@ -432,27 +432,7 @@ nav{
     <a href="/compare" class="nav-link">Compare</a>
     <a href="/dashboard" class="nav-link">Dashboard</a>
   </div>
-  <div class="user-section">
-    {% if user %}
-    <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
-      {% if user[4] %}
-      <img src="{{ user[4] }}" alt="User Avatar">
-      {% else %}
-      {{ user[3]|first|upper if user[3] else 'U' }}
-      {% endif %}
-    </div>
-    <div class="user-dropdown" id="userDropdown">
-      <div class="user-dropdown-item">
-        <strong>{{ user[3] }}</strong><br>
-        <span style="color:var(--muted);font-size:11px">{{ user[2] }}</span>
-      </div>
-      <a href="/user/profile" class="user-dropdown-item user-dropdown-link">👤 Profile</a>
-      <a href="/logout" class="user-dropdown-item user-dropdown-link">🚪 Logout</a>
-    </div>
-    {% else %}
-    <a href="/login" class="nav-link" style="background:var(--rust);color:white">Login</a>
-    {% endif %}
-  </div>
+
 </nav>
 
 <div class="hero animate" style="--d:.05s">
