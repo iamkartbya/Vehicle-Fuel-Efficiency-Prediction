@@ -2,23 +2,27 @@
 OAuth and Authentication Module
 Handles Google, Facebook, and Telegram login
 """
+import os
 import requests
 import json
 from functools import wraps
 from flask import session, redirect, url_for, current_app, jsonify
+from dotenv import load_dotenv
 from database import find_or_create_user, get_user_by_id
 
+load_dotenv()
+
 # OAuth Configuration
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"
-GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
-GOOGLE_REDIRECT_URI = "http://localhost:5000/auth/callback/google"
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:5000/auth/callback/google')
 
-FACEBOOK_APP_ID = "YOUR_FACEBOOK_APP_ID"
-FACEBOOK_APP_SECRET = "YOUR_FACEBOOK_APP_SECRET"
-FACEBOOK_REDIRECT_URI = "http://localhost:5000/auth/callback/facebook"
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID', 'YOUR_FACEBOOK_APP_ID')
+FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET', 'YOUR_FACEBOOK_APP_SECRET')
+FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/callback/facebook')
 
-TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-TELEGRAM_REDIRECT_URI = "http://localhost:5000/auth/callback/telegram"
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'YOUR_TELEGRAM_BOT_TOKEN')
+TELEGRAM_REDIRECT_URI = os.getenv('TELEGRAM_REDIRECT_URI', 'http://localhost:5000/auth/callback/telegram')
 
 # Google OAuth
 class GoogleOAuth:

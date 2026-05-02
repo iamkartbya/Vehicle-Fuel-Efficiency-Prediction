@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = "predictions.db"
 
@@ -7,15 +8,16 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
-    # Users table for OAuth login
+    # Users table for both OAuth and manual login
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             provider        TEXT,
-            provider_id     TEXT UNIQUE,
+            provider_id     TEXT,
             email           TEXT UNIQUE,
             name            TEXT,
             profile_picture TEXT,
+            password_hash   TEXT,
             created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -107,3 +109,65 @@ def get_history(user_id=None, limit=10):
     rows = c.fetchall()
     conn.close()
     return rows
+
+
+# Manual Authentication Functions
+def register_user(email, name, password):
+    """Register a new user with email and password"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        # Check if email already exists
+        c.execute('SELECT id FROM users WHERE email = ?', (email,))
+        if c.fetchone():
+            conn.close()
+            return None, "Email already registered"
+        
+        # Hash password and create user
+        password_hash = generate_password_hash(password)
+        c.execute('''INSERT INTO users (provider, email, name, password_hash)
+                     VALUES (?, ?, ?, ?)''',
+                  ('manual', email, name, password_hash))
+        user_id = c.lastrowid
+        
+        conn.commit()
+        conn.close()
+        return user_id, "Registration successful"
+    
+    except Exception as e:
+        return None, str(e)
+
+
+def login_user(email, password):
+    """Login user with email and password"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        c.execute('SELECT id, password_hash FROM users WHERE email = ? AND provider = ?', 
+                  (email, 'manual'))
+        user = c.fetchone()
+        conn.close()
+        
+        if not user:
+            return None, "Invalid email or password"
+        
+        user_id, password_hash = user
+        if check_password_hash(password_hash, password):
+            return user_id, "Login successful"
+        else:
+            return None, "Invalid email or password"
+    
+    except Exception as e:
+        return None, str(e)
+
+
+def get_user_by_email(email):
+    """Get user by email"""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT id, email, name FROM users WHERE email = ?', (email,))
+    user = c.fetchone()
+    conn.close()
+    return user

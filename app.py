@@ -5,7 +5,7 @@ import numpy as np
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
-from database import init_db, save_prediction, get_history, find_or_create_user, get_user_by_id
+from database import init_db, save_prediction, get_history, find_or_create_user, get_user_by_id, register_user, login_user
 from auth import (
     GoogleOAuth, FacebookOAuth, TelegramOAuth,
     login_required, get_current_user, logout_user
@@ -222,6 +222,73 @@ def logout():
     """Logout user"""
     logout_user()
     return redirect(url_for('login'))
+
+# ──────────────────────────────────────────
+# Manual Authentication Routes
+# ──────────────────────────────────────────
+
+@app.route("/auth/signup", methods=['POST'])
+def signup():
+    """Handle user registration"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        name = data.get('name', '').strip()
+        password = data.get('password', '')
+        confirm_password = data.get('confirm_password', '')
+        
+        # Validation
+        if not email or not name or not password:
+            return jsonify({"success": False, "error": "All fields are required"}), 400
+        
+        if password != confirm_password:
+            return jsonify({"success": False, "error": "Passwords do not match"}), 400
+        
+        if len(password) < 6:
+            return jsonify({"success": False, "error": "Password must be at least 6 characters"}), 400
+        
+        # Register user
+        user_id, message = register_user(email, name, password)
+        
+        if not user_id:
+            return jsonify({"success": False, "error": message}), 400
+        
+        # Set session
+        session['user_id'] = user_id
+        session.permanent = True
+        
+        return jsonify({"success": True, "message": "Registration successful", "redirect": url_for('index')})
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/auth/login-manual", methods=['POST'])
+def login_manual():
+    """Handle manual login with email and password"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        # Validation
+        if not email or not password:
+            return jsonify({"success": False, "error": "Email and password are required"}), 400
+        
+        # Login user
+        user_id, message = login_user(email, password)
+        
+        if not user_id:
+            return jsonify({"success": False, "error": message}), 401
+        
+        # Set session
+        session['user_id'] = user_id
+        session.permanent = True
+        
+        return jsonify({"success": True, "message": "Login successful", "redirect": url_for('index')})
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/user/profile")
 @login_required
