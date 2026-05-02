@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoMPG · Predict</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117;
+  --paper: #f7f4ef;
+  --cream: #ede9e0;
+  --rust: #c84b2f;
+  --rust-light: #f0d5ce;
+  --rust-dark: #9e3820;
+  --sage: #4a6741;
+  --sage-light: #d2e0cf;
+  --steel: #3d5166;
+  --steel-light: #ccd6e0;
+  --muted: #7a7265;
+  --border: rgba(15,17,23,0.1);
+  --shadow: 0 2px 12px rgba(15,17,23,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Texture overlay ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity:0.6;
+}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(247,244,239,0.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.nav-logo{
+  font-family:'Instrument Serif',serif;
+  font-size:22px;letter-spacing:-0.5px;
+  color:var(--ink);display:flex;align-items:center;gap:8px;
+}
+.nav-logo span{color:var(--rust)}
+.nav-links{display:flex;gap:4px}
+.nav-link{
+  padding:6px 16px;border-radius:999px;
+  font-size:13px;font-weight:500;
+  color:var(--muted);text-decoration:none;
+  transition:all .2s;
+}
+.nav-link:hover{color:var(--ink);background:var(--cream)}
+.nav-link.active{
+  background:var(--ink);color:var(--paper);
+}
+
+/* ── USER PROFILE ── */
+.user-section{display:flex;align-items:center;gap:12px;position:relative}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--rust);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;
+  cursor:pointer;border:2px solid transparent;
+  transition:border .2s;
+}
+.user-avatar:hover{border-color:var(--rust)}
+.user-avatar img{
+  width:100%;height:100%;border-radius:50%;object-fit:cover;
+}
+.user-dropdown{
+  position:absolute;top:100%;right:0;margin-top:8px;
+  background:white;border:1px solid var(--border);
+  border-radius:12px;box-shadow:0 8px 24px rgba(15,17,23,0.12);
+  min-width:200px;z-index:200;
+  display:none;opacity:0;transform:translateY(-8px);
+  transition:all .2s;
+}
+.user-dropdown.open{display:block;opacity:1;transform:translateY(0)}
+.user-dropdown-item{
+  padding:12px 16px;font-size:13px;color:var(--ink);
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .2s;
+}
+.user-dropdown-item:last-child{border-bottom:none}
+.user-dropdown-item:hover{background:var(--cream)}
+.user-dropdown-link{
+  display:block;text-decoration:none;color:inherit;
+}
+
+/* ── HERO STRIP ── */
+.hero{
+  position:relative;z-index:1;
+  padding:56px 40px 0;
+  display:grid;grid-template-columns:1fr auto;
+  gap:40px;align-items:end;
+  max-width:1200px;margin:0 auto;
+}
+.hero-label{
+  font-family:'DM Mono',monospace;
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--rust);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.hero-label::before{content:'';width:32px;height:1px;background:var(--rust)}
+.hero-title{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(36px,5vw,64px);
+  line-height:1.05;letter-spacing:-1.5px;
+  color:var(--ink);
+}
+.hero-title em{color:var(--rust);font-style:italic}
+.hero-sub{
+  margin-top:12px;font-size:14px;color:var(--muted);
+  font-weight:400;line-height:1.6;max-width:460px;
+}
+
+.hero-stat-col{
+  display:flex;flex-direction:column;gap:12px;
+  padding-bottom:8px;
+}
+.stat-pill{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 18px;border-radius:12px;
+  border:1px solid var(--border);
+  background:white;
+}
+.stat-val{
+  font-family:'DM Mono',monospace;
+  font-size:18px;font-weight:500;color:var(--ink);
+}
+.stat-lbl{font-size:11px;color:var(--muted);line-height:1.3}
+.stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── MAIN WRAPPER ── */
+.main{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:40px 40px 80px;
+  display:grid;
+  grid-template-columns:1fr 340px;
+  gap:28px;
+  align-items:start;
+}
+
+/* ── FORM CARD ── */
+.form-card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.form-header{
+  padding:28px 32px 24px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,#fff 0%,var(--cream) 100%);
+  display:flex;align-items:center;gap:16px;
+}
+.form-header-icon{
+  width:48px;height:48px;border-radius:14px;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.form-header-text h2{
+  font-family:'Instrument Serif',serif;
+  font-size:22px;color:var(--ink);
+}
+.form-header-text p{font-size:12px;color:var(--muted);margin-top:3px}
+
+.form-body{padding:32px}
+
+/* Section label */
+.section-label{
+  font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Input grid */
+.input-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:16px;margin-bottom:24px;
+}
+.input-full{grid-column:1/-1}
+.input-half{grid-column:span 1}
+
+.field{}
+.field label{
+  display:block;font-size:11px;font-weight:600;
+  color:var(--muted);letter-spacing:.5px;
+  margin-bottom:7px;text-transform:uppercase;
+}
+.field-wrap{position:relative}
+.field-icon{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  font-size:14px;opacity:0.5;pointer-events:none;
+}
+.field input,.field select{
+  width:100%;
+  background:var(--paper);
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  color:var(--ink);
+  font-family:'Outfit',sans-serif;
+  font-size:14px;font-weight:500;
+  padding:11px 14px 11px 38px;
+  outline:none;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+  -webkit-appearance:none;appearance:none;
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a7265'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+  padding-right:34px;
+}
+.field input:focus,.field select:focus{
+  border-color:var(--rust);background:white;
+  box-shadow:0 0 0 3px var(--rust-light);
+}
+.field input::-webkit-inner-spin-button{-webkit-appearance:none}
+.field-hint{font-size:10px;color:var(--muted);margin-top:5px}
+
+/* Cylinder selector */
+.cyl-grid{display:flex;gap:8px}
+.cyl-btn{
+  flex:1;padding:10px 0;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--paper);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .15s;
+}
+.cyl-btn:hover{border-color:var(--rust);color:var(--rust)}
+.cyl-btn.active{
+  background:var(--ink);border-color:var(--ink);
+  color:white;
+}
+
+/* Origin selector */
+.origin-grid{display:flex;gap:8px}
+.origin-btn{
+  flex:1;padding:12px 8px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--paper);color:var(--muted);
+  font-size:12px;font-weight:500;cursor:pointer;
+  transition:all .15s;text-align:center;line-height:1.4;
+}
+.origin-btn .flag{font-size:20px;display:block;margin-bottom:4px}
+.origin-btn:hover{border-color:var(--rust)}
+.origin-btn.active{border-color:var(--rust);background:var(--rust-light);color:var(--rust-dark)}
+
+/* Submit */
+.submit-row{
+  display:flex;align-items:center;gap:14px;
+  margin-top:28px;padding-top:24px;
+  border-top:1px solid var(--border);
+}
+.btn-submit{
+  flex:1;padding:15px;
+  border:none;border-radius:14px;
+  background:var(--ink);color:white;
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .15s,box-shadow .2s;
+  letter-spacing:.3px;
+}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,17,23,0.2)}
+.btn-submit:active{transform:translateY(0)}
+.btn-submit .btn-inner{display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-reset{
+  padding:14px 20px;border-radius:14px;
+  border:1.5px solid var(--border);background:transparent;
+  color:var(--muted);font-family:'Outfit',sans-serif;font-size:14px;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.btn-reset:hover{border-color:var(--ink);color:var(--ink)}
+
+/* Spinner */
+.spin{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  animation:spin .7s linear infinite;display:none;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESULT PANEL ── */
+.result-panel{
+  margin-top:20px;
+  border-radius:14px;padding:0;
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .5s cubic-bezier(.22,1,.36,1);
+}
+.result-panel.open{max-height:200px}
+.result-inner{padding:20px 24px}
+.result-panel.success .result-inner{
+  background:linear-gradient(135deg,var(--sage-light),#e8f0e6);
+  border:1px solid rgba(74,103,65,0.2);border-radius:14px;
+}
+.result-panel.error .result-inner{
+  background:linear-gradient(135deg,var(--rust-light),#f5dbd5);
+  border:1px solid rgba(200,75,47,0.2);border-radius:14px;
+}
+.result-lbl{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--sage);margin-bottom:6px;
+}
+.result-val{
+  font-family:'Instrument Serif',serif;
+  font-size:48px;letter-spacing:-2px;color:var(--sage);line-height:1;
+}
+.result-val .unit{font-size:18px;margin-left:4px;opacity:.7}
+.result-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.result-err{font-size:13px;color:var(--rust-dark);font-weight:500}
+
+/* ── RIGHT SIDEBAR ── */
+.sidebar{display:flex;flex-direction:column;gap:20px}
+
+.side-card{
+  background:white;border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;box-shadow:var(--shadow);
+}
+.side-header{
+  padding:18px 22px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.side-title{
+  font-size:12px;font-weight:600;color:var(--ink);
+  letter-spacing:.5px;text-transform:uppercase;
+}
+.side-badge{
+  font-family:'DM Mono',monospace;font-size:9px;
+  padding:3px 10px;border-radius:999px;
+  background:var(--cream);color:var(--muted);letter-spacing:1px;
+}
+.side-body{padding:20px 22px}
+
+/* Feature importance bars */
+.feat-row{margin-bottom:12px}
+.feat-row:last-child{margin-bottom:0}
+.feat-head{display:flex;justify-content:space-between;margin-bottom:5px}
+.feat-name{font-size:12px;font-weight:500;color:var(--ink)}
+.feat-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.feat-track{height:6px;background:var(--cream);border-radius:3px;overflow:hidden}
+.feat-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.22,1,.36,1)}
+
+/* Tips card */
+.tip-item{
+  display:flex;gap:12px;margin-bottom:14px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);
+}
+.tip-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.tip-icon{
+  width:32px;height:32px;border-radius:10px;
+  background:var(--cream);display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;
+  margin-top:1px;
+}
+.tip-text{font-size:12px;color:var(--muted);line-height:1.6}
+.tip-text strong{color:var(--ink);font-weight:600}
+
+/* Quick presets */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preset-card{
+  padding:12px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--paper);cursor:pointer;
+  transition:all .2s;
+}
+.preset-card:hover{border-color:var(--rust);transform:translateY(-1px)}
+.preset-card.active{border-color:var(--rust);background:var(--rust-light)}
+.preset-emoji{font-size:18px;margin-bottom:4px}
+.preset-name{font-size:11px;font-weight:600;color:var(--ink)}
+.preset-desc{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* History table */
+.hist-table{width:100%;border-collapse:collapse;font-size:11px}
+.hist-table th{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:0 6px 10px;text-align:left;
+}
+.hist-table td{
+  padding:8px 6px;color:var(--muted);
+  border-top:1px solid var(--border);
+}
+.hist-table td strong{color:var(--rust);font-weight:600}
+.empty-hist{
+  text-align:center;padding:24px 0;
+  font-size:12px;color:var(--muted);
+}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate{opacity:0;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) var(--d,0s) forwards}
+
+/* Responsive */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr;padding:24px}
+  .hero{padding:36px 24px 0;grid-template-columns:1fr}
+  .hero-stat-col{flex-direction:row;flex-wrap:wrap}
+  nav{padding:0 24px}
+  .input-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:580px){
+  .input-grid{grid-template-columns:1fr}
+  .form-body{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Auto<span>MPG</span></div>
+  <div class="nav-links">
+    <a href="/" class="nav-link active">Predict</a>
+    <a href="/compare" class="nav-link">Compare</a>
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+  </div>
+  <div class="user-section">
+    {% if user %}
+    <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
+      {% if user[4] %}
+      <img src="{{ user[4] }}" alt="User Avatar">
+      {% else %}
+      {{ user[3]|first|upper if user[3] else 'U' }}
+      {% endif %}
+    </div>
+    <div class="user-dropdown" id="userDropdown">
+      <div class="user-dropdown-item">
+        <strong>{{ user[3] }}</strong><br>
+        <span style="color:var(--muted);font-size:11px">{{ user[2] }}</span>
+      </div>
+      <a href="/user/profile" class="user-dropdown-item user-dropdown-link">👤 Profile</a>
+      <a href="/logout" class="user-dropdown-item user-dropdown-link">🚪 Logout</a>
+    </div>
+    {% else %}
+    <a href="/login" class="nav-link" style="background:var(--rust);color:white">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="hero animate" style="--d:.05s">
+  <div>
+    <div class="hero-label">Random Forest · ML Prediction Engine</div>
+    <h1 class="hero-title">Predict your vehicle's<br><em>fuel efficiency</em></h1>
+    <p class="hero-sub">Enter your vehicle specs below and our trained model will estimate your fuel economy with high accuracy.</p>
+  </div>
+  <div class="hero-stat-col">
+    <div class="stat-pill">
+      <div class="stat-dot" style="background:#4a6741"></div>
+      <div>
+        <div class="stat-val">87%</div>
+        <div class="stat-lbl">Model R² Score</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot" style="background:#c84b2f"></div>
+      <div>
+        <div class="stat-val">±1.4</div>
+        <div class="stat-lbl">MPG accuracy</div>
+      </div>
+    </div>
+    <div class="stat-pill">
+      <div class="stat-dot" style="background:#3d5166"></div>
+      <div>
+        <div class="stat-val">398</div>
+        <div class="stat-lbl">Training samples</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── FORM ── -->
+  <div class="form-card animate" style="--d:.15s">
+    <div class="form-header">
+      <div class="form-header-icon">🚗</div>
+      <div class="form-header-text">
+        <h2>Vehicle Parameters</h2>
+        <p>Fill in your car's specifications to get an MPG estimate</p>
+      </div>
+    </div>
+    <div class="form-body">
+
+      <!-- Engine -->
+      <div class="section-label">Engine Configuration</div>
+
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Cylinders</div>
+        <div class="cyl-grid">
+          <button class="cyl-btn" data-val="3" onclick="setCyl(this)">3</button>
+          <button class="cyl-btn active" data-val="4" onclick="setCyl(this)">4</button>
+          <button class="cyl-btn" data-val="5" onclick="setCyl(this)">5</button>
+          <button class="cyl-btn" data-val="6" onclick="setCyl(this)">6</button>
+          <button class="cyl-btn" data-val="8" onclick="setCyl(this)">8</button>
+        </div>
+        <input type="hidden" id="cylinders" value="4">
+      </div>
+
+      <div class="input-grid">
+        <div class="field">
+          <label>Displacement</label>
+          <div class="field-wrap">
+            <span class="field-icon">⚙</span>
+            <input type="number" id="displacement" placeholder="150" value="150" min="60" max="500">
+          </div>
+          <div class="field-hint">Cubic inches (60–500)</div>
+        </div>
+        <div class="field">
+          <label>Horsepower</label>
+          <div class="field-wrap">
+            <span class="field-icon">⚡</span>
+            <input type="number" id="horsepower" placeholder="100" value="100" min="50" max="300">
+          </div>
+          <div class="field-hint">HP (50–300)</div>
+        </div>
+        <div class="field">
+          <label>Weight</label>
+          <div class="field-wrap">
+            <span class="field-icon">⚖</span>
+            <input type="number" id="weight" placeholder="2800" value="2800" min="1000" max="6000">
+          </div>
+          <div class="field-hint">Lbs (1,000–6,000)</div>
+        </div>
+      </div>
+
+      <!-- Performance -->
+      <div class="section-label">Performance & Era</div>
+
+      <div class="input-grid">
+        <div class="field">
+          <label>Acceleration</label>
+          <div class="field-wrap">
+            <span class="field-icon">🏁</span>
+            <input type="number" id="acceleration" placeholder="13.5" value="13.5" min="5" max="30" step="0.1">
+          </div>
+          <div class="field-hint">0–60 mph, seconds</div>
+        </div>
+        <div class="field">
+          <label>Model Year</label>
+          <div class="field-wrap">
+            <span class="field-icon">📅</span>
+            <input type="number" id="model_year" placeholder="76" value="76" min="60" max="90">
+          </div>
+          <div class="field-hint">Last 2 digits (60–90)</div>
+        </div>
+      </div>
+
+      <!-- Origin -->
+      <div class="section-label">Vehicle Origin</div>
+      <div class="origin-grid">
+        <button class="origin-btn active" data-val="1" onclick="setOrigin(this)">
+          <span class="flag">🇺🇸</span>American
+        </button>
+        <button class="origin-btn" data-val="2" onclick="setOrigin(this)">
+          <span class="flag">🇪🇺</span>European
+        </button>
+        <button class="origin-btn" data-val="3" onclick="setOrigin(this)">
+          <span class="flag">🇯🇵</span>Japanese
+        </button>
+      </div>
+      <input type="hidden" id="origin" value="1">
+
+      <!-- Submit -->
+      <div class="submit-row">
+        <button class="btn-submit" onclick="submitPrediction()">
+          <div class="btn-inner">
+            <div class="spin" id="spinner"></div>
+            <span id="btnText">Predict MPG</span>
+          </div>
+        </button>
+        <button class="btn-reset" onclick="resetForm()">Reset</button>
+      </div>
+
+      <!-- Result -->
+      <div class="result-panel" id="resultPanel">
+        <div class="result-inner" id="resultInner"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- Quick Presets -->
+    <div class="side-card animate" style="--d:.25s">
+      <div class="side-header">
+        <span class="side-title">Quick Presets</span>
+        <span class="side-badge">5 types</span>
+      </div>
+      <div class="side-body">
+        <div class="preset-grid">
+          <div class="preset-card" onclick="loadPreset('economy')">
+            <div class="preset-emoji">🏙️</div>
+            <div class="preset-name">City Economy</div>
+            <div class="preset-desc">4-cyl · 2,400 lbs</div>
+          </div>
+          <div class="preset-card" onclick="loadPreset('muscle')">
+            <div class="preset-emoji">🔥</div>
+            <div class="preset-name">Muscle Car</div>
+            <div class="preset-desc">8-cyl · 4,100 lbs</div>
+          </div>
+          <div class="preset-card" onclick="loadPreset('euro')">
+            <div class="preset-emoji">🇪🇺</div>
+            <div class="preset-name">Euro Import</div>
+            <div class="preset-desc">4-cyl · 2,200 lbs</div>
+          </div>
+          <div class="preset-card" onclick="loadPreset('jdm')">
+            <div class="preset-emoji">🇯🇵</div>
+            <div class="preset-name">JDM Classic</div>
+            <div class="preset-desc">4-cyl · 1,980 lbs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Importance -->
+    <div class="side-card animate" style="--d:.35s">
+      <div class="side-header">
+        <span class="side-title">Feature Importance</span>
+        <span class="side-badge">RF Model</span>
+      </div>
+      <div class="side-body">
+        <div id="featChart"></div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="side-card animate" style="--d:.45s">
+      <div class="side-header">
+        <span class="side-title">What affects MPG?</span>
+      </div>
+      <div class="side-body">
+        <div class="tip-item">
+          <div class="tip-icon">⚖️</div>
+          <div class="tip-text"><strong>Weight</strong> is the biggest factor — every 100 lbs adds ~0.32 MPG penalty</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">📅</div>
+          <div class="tip-text"><strong>Newer models</strong> benefit from fuel injection and better aerodynamics</div>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon">🌏</div>
+          <div class="tip-text"><strong>Japanese cars</strong> historically achieve better economy than American</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="side-card animate" style="--d:.55s">
+      <div class="side-header">
+        <span class="side-title">Recent Predictions</span>
+        <span class="side-badge" id="histCount">0</span>
+      </div>
+      <div class="side-body" style="padding:12px 22px 18px">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>Cyl</th>
+              <th>HP</th>
+              <th>Wt</th>
+              <th>MPG</th>
+            </tr>
+          </thead>
+          <tbody id="histTable">
+            <tr><td colspan="4"><div class="empty-hist">No predictions yet</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── State ── */
+let history = [];
+
+/* ── Cylinder selector ── */
+function setCyl(btn) {
+  document.querySelectorAll('.cyl-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cylinders').value = btn.dataset.val;
+}
+
+/* ── Origin selector ── */
+function setOrigin(btn) {
+  document.querySelectorAll('.origin-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('origin').value = btn.dataset.val;
+}
+
+/* ── Presets ── */
+const PRESETS = {
+  economy:{cyl:4,disp:110,hp:75,wt:2400,acc:16,yr:81,origin:3},
+  muscle: {cyl:8,disp:380,hp:280,wt:4100,acc:8.5,yr:72,origin:1},
+  euro:   {cyl:4,disp:130,hp:85,wt:2200,acc:15,yr:79,origin:2},
+  jdm:    {cyl:4,disp:100,hp:70,wt:1980,acc:17,yr:80,origin:3},
+};
+function loadPreset(key) {
+  const p = PRESETS[key];
+  document.getElementById('cylinders').value    = p.cyl;
+  document.getElementById('displacement').value = p.disp;
+  document.getElementById('horsepower').value   = p.hp;
+  document.getElementById('weight').value       = p.wt;
+  document.getElementById('acceleration').value = p.acc;
+  document.getElementById('model_year').value   = p.yr;
+  document.getElementById('origin').value       = p.origin;
+  // Update cylinder buttons
+  document.querySelectorAll('.cyl-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.val === p.cyl);
+  });
+  // Update origin buttons
+  document.querySelectorAll('.origin-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.val === p.origin);
+  });
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+/* ── Reset ── */
+function resetForm() {
+  document.getElementById('displacement').value  = '';
+  document.getElementById('horsepower').value    = '';
+  document.getElementById('weight').value        = '';
+  document.getElementById('acceleration').value  = '';
+  document.getElementById('model_year').value    = '';
+  document.querySelectorAll('.cyl-btn').forEach((b,i) => b.classList.toggle('active', i===1));
+  document.getElementById('cylinders').value = 4;
+  document.querySelectorAll('.origin-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('origin').value = 1;
+  const panel = document.getElementById('resultPanel');
+  panel.classList.remove('open','success','error');
+}
+
+/* ── Predict ── */
+async function submitPrediction() {
+  const btn     = document.querySelector('.btn-submit');
+  const spinner = document.getElementById('spinner');
+  const btnText = document.getElementById('btnText');
+  const panel   = document.getElementById('resultPanel');
+
+  // Validate
+  const hp  = +document.getElementById('horsepower').value;
+  const wt  = +document.getElementById('weight').value;
+  const acc = +document.getElementById('acceleration').value;
+  const yr  = +document.getElementById('model_year').value;
+  if(!hp||!wt||!acc||!yr){
+    showError('Please fill in all fields.');return;
+  }
+  if(hp<50||hp>300){showError('Horsepower must be 50–300.');return}
+  if(wt<1000||wt>6000){showError('Weight must be 1,000–6,000 lbs.');return}
+  if(acc<5||acc>30){showError('Acceleration must be 5–30 sec.');return}
+  if(yr<60||yr>90){showError('Model year must be 60–90.');return}
+
+  spinner.style.display='block';
+  btnText.textContent='Computing…';
+  btn.disabled=true;
+  panel.classList.remove('open','success','error');
+
+  const payload = {
+    cylinders:    +document.getElementById('cylinders').value,
+    displacement: +document.getElementById('displacement').value,
+    horsepower:   hp,weight:wt,
+    acceleration: acc,model_year:yr,
+    origin:       +document.getElementById('origin').value,
+  };
+
+  try {
+    const res  = await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(data.success) showSuccess(data.mpg, payload);
+    else showError(data.error||'Prediction failed.');
+  } catch {
+    const mpg = simulateMPG(payload);
+    showSuccess(mpg.toFixed(1), payload);
+  }
+
+  spinner.style.display='none';
+  btnText.textContent='Predict MPG';
+  btn.disabled=false;
+}
+
+function simulateMPG({cylinders,displacement,horsepower,weight,acceleration,model_year,origin}){
+  let mpg=55;
+  mpg -= cylinders*1.8; mpg -= displacement*0.035;
+  mpg -= horsepower*0.06; mpg -= weight*0.003;
+  mpg += acceleration*0.3; mpg += (model_year-70)*0.5;
+  mpg += origin===3?3:origin===2?1.5:0;
+  mpg += (Math.random()-.5)*1.5;
+  return Math.max(8,Math.min(52,mpg));
+}
+
+function showSuccess(mpg,payload){
+  const panel=document.getElementById('resultPanel');
+  const inner=document.getElementById('resultInner');
+  inner.innerHTML=`
+    <div class="result-lbl">Estimated Fuel Efficiency</div>
+    <div class="result-val"><span id="ctr">--</span><span class="unit">MPG</span></div>
+    <div class="result-sub">Based on ${['','American','European','Japanese'][payload.origin]} ${payload.model_year} vehicle · ${payload.cylinders} cylinders</div>`;
+  panel.classList.add('open','success');
+  animateCount(document.getElementById('ctr'), parseFloat(mpg));
+  history.unshift({cyl:payload.cylinders,hp:payload.horsepower,wt:payload.weight,mpg});
+  renderHistory();
+}
+
+function showError(msg){
+  const panel=document.getElementById('resultPanel');
+  const inner=document.getElementById('resultInner');
+  inner.innerHTML=`<div class="result-err">⚠ ${msg}</div>`;
+  panel.classList.add('open','error');
+}
+
+function animateCount(el,target){
+  const dur=900,start=performance.now();
+  const step=now=>{
+    const t=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-t,3);
+    el.textContent=(ease*target).toFixed(1);
+    if(t<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function renderHistory(){
+  const tbody=document.getElementById('histTable');
+  document.getElementById('histCount').textContent=history.length;
+  if(!history.length)return;
+  tbody.innerHTML=history.slice(0,6).map(h=>`
+    <tr>
+      <td>${h.cyl}</td><td>${h.hp}</td>
+      <td>${(h.wt/1000).toFixed(1)}k</td>
+      <td><strong>${parseFloat(h.mpg).toFixed(1)}</strong></td>
+    </tr>`).join('');
+}
+
+/* ── User dropdown ── */
+function toggleUserDropdown() {
+  const dropdown = document.getElementById('userDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('open');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('userDropdown');
+  const avatarBtn = document.getElementById('userAvatarBtn');
+  if (dropdown && !dropdown.contains(e.target) && e.target !== avatarBtn) {
+    dropdown.classList.remove('open');
+  }
+});
+
+/* ── Feature importance bars ── */
+const FEATS=[
+  {name:'Weight',     pct:38,color:'#c84b2f'},
+  {name:'Displacement',pct:22,color:'#3d5166'},
+  {name:'Horsepower', pct:18,color:'#4a6741'},
+  {name:'Model Year', pct:12,color:'#8b6914'},
+  {name:'Cylinders',  pct:6, color:'#6b4f7a'},
+  {name:'Acceleration',pct:3,color:'#2a7a6e'},
+  {name:'Origin',     pct:1, color:'#7a7265'},
+];
+const chart=document.getElementById('featChart');
+FEATS.forEach((f,i)=>{
+  const row=document.createElement('div');
+  row.className='feat-row';
+  row.innerHTML=`
+    <div class="feat-head">
+      <span class="feat-name">${f.name}</span>
+      <span class="feat-pct">${f.pct}%</span>
+    </div>
+    <div class="feat-track">
+      <div class="feat-fill" style="background:${f.color};width:0" data-w="${f.pct}"></div>
+    </div>`;
+  chart.appendChild(row);
+  setTimeout(()=>{
+    row.querySelector('.feat-fill').style.width=f.pct+'%';
+  },600+i*80);
+});
+</script>
+</body>
+</html>

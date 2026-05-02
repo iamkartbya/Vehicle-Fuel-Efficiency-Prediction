@@ -1,0 +1,94 @@
+/* General Page Styling */
+body {
+    background: linear-gradient(135deg, #eef2f7, #f8fbff);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Heading */
+h1 {
+    color: #2c3e50;
+}
+
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+/* Form Elements */
+.form-label {
+    font-weight: 500;
+    color: #34495e;
+}
+
+.form-control,
+.form-select {
+    border-radius: 10px;
+    border: 1px solid #dcdfe6;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.4);
+}
+
+/* Button Styling */
+.btn-primary {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #357abd, #2c6bb2);
+    transform: scale(1.02);
+}
+
+/* Result Box */
+#result .alert {
+    border-radius: 10px;
+    font-size: 1.1rem;
+}
+
+/* Table Styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead {
+    background-color: #f1f5f9;
+}
+
+.table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #555;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Feature Image */
+img {
+    border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.6rem;
+    }
+}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoMPG · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117;
+  --paper: #f7f4ef;
+  --cream: #ede9e0;
+  --rust: #c84b2f;
+  --rust-light: #f0d5ce;
+  --rust-dark: #9e3820;
+  --sage: #4a6741;
+  --sage-light: #d2e0cf;
+  --steel: #3d5166;
+  --steel-light: #ccd6e0;
+  --muted: #7a7265;
+  --border: rgba(15,17,23,0.1);
+  --shadow: 0 2px 12px rgba(15,17,23,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Texture overlay ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity:0.6;
+}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(247,244,239,0.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.nav-logo{
+  font-family:'Instrument Serif',serif;
+  font-size:22px;letter-spacing:-0.5px;
+  color:var(--ink);display:flex;align-items:center;gap:8px;
+}
+.nav-logo span{color:var(--rust)}
+.nav-links{display:flex;gap:4px}
+.nav-link{
+  padding:6px 16px;border-radius:999px;
+  font-size:13px;font-weight:500;
+  color:var(--muted);text-decoration:none;
+  transition:all .2s;
+}
+.nav-link:hover{color:var(--ink);background:var(--cream)}
+.nav-link.active{
+  background:var(--ink);color:var(--paper);
+}
+
+/* ── USER PROFILE ── */
+.user-section{display:flex;align-items:center;gap:12px;position:relative}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--rust);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;
+  cursor:pointer;border:2px solid transparent;
+  transition:border .2s;
+}
+.user-avatar:hover{border-color:var(--rust)}
+.user-avatar img{
+  width:100%;height:100%;border-radius:50%;object-fit:cover;
+}
+.user-dropdown{
+  position:absolute;top:100%;right:0;margin-top:8px;
+  background:white;border:1px solid var(--border);
+  border-radius:12px;box-shadow:0 8px 24px rgba(15,17,23,0.12);
+  min-width:200px;z-index:200;
+  display:none;opacity:0;transform:translateY(-8px);
+  transition:all .2s;
+}
+.user-dropdown.open{display:block;opacity:1;transform:translateY(0)}
+.user-dropdown-item{
+  padding:12px 16px;font-size:13px;color:var(--ink);
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .2s;
+}
+.user-dropdown-item:last-child{border-bottom:none}
+.user-dropdown-item:hover{background:var(--cream)}
+.user-dropdown-link{
+  display:block;text-decoration:none;color:inherit;
+}
+
+/* ── PAGE HEADER ── */
+.page-header{
+  position:relative;z-index:1;
+  padding:48px 40px 0;max-width:1200px;margin:0 auto;
+}
+.page-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--rust);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.page-label::before{content:'';width:32px;height:1px;background:var(--rust)}
+.page-title{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(32px,4vw,52px);line-height:1.05;
+  letter-spacing:-1.5px;color:var(--ink);
+}
+.page-title em{color:var(--rust);font-style:italic}
+.page-sub{margin-top:10px;font-size:14px;color:var(--muted);max-width:500px;line-height:1.6}
+
+/* ── MAIN ── */
+.main{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:36px 40px 80px;
+}
+
+/* ── STATS GRID ── */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:20px;margin-bottom:40px;
+}
+.stat-card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:12px;
+}
+.stat-card-icon{
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--rust),var(--rust-light));
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.stat-card-title{
+  font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.stat-card-value{
+  font-family:'DM Mono',monospace;
+  font-size:28px;font-weight:600;color:var(--ink);
+}
+.stat-card-sub{
+  font-size:12px;color:var(--muted);
+}
+
+/* ── DATA TABLE ── */
+.data-section{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  margin-bottom:28px;
+}
+.data-header{
+  padding:28px 32px 24px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,#fff 0%,var(--cream) 100%);
+}
+.data-header h2{
+  font-family:'Instrument Serif',serif;
+  font-size:22px;color:var(--ink);
+}
+.data-header p{font-size:12px;color:var(--muted);margin-top:3px}
+
+.data-body{
+  overflow-x:auto;
+}
+table{
+  width:100%;border-collapse:collapse;
+  font-size:13px;
+}
+table th{
+  background:var(--cream);
+  padding:16px 20px;text-align:left;
+  font-weight:600;color:var(--muted);
+  border-bottom:1px solid var(--border);
+  font-size:11px;letter-spacing:0.5px;text-transform:uppercase;
+}
+table td{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  color:var(--ink);
+}
+table tr:hover{background:rgba(200,75,47,0.02)}
+table tbody tr:last-child td{border-bottom:none}
+
+.no-data{
+  padding:40px 20px;text-align:center;color:var(--muted);
+  font-size:14px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.animate{animation:fadeIn 0.6s ease-out forwards}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Auto<span>MPG</span></div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Predict</a>
+    <a href="/compare" class="nav-link">Compare</a>
+    <a href="/dashboard" class="nav-link active">Dashboard</a>
+  </div>
+  <div class="user-section">
+    {% if user %}
+    <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
+      {% if user[4] %}
+      <img src="{{ user[4] }}" alt="User Avatar">
+      {% else %}
+      {{ user[3]|first|upper if user[3] else 'U' }}
+      {% endif %}
+    </div>
+    <div class="user-dropdown" id="userDropdown">
+      <div class="user-dropdown-item">
+        <strong>{{ user[3] }}</strong><br>
+        <span style="color:var(--muted);font-size:11px">{{ user[2] }}</span>
+      </div>
+      <a href="/user/profile" class="user-dropdown-item user-dropdown-link">👤 Profile</a>
+      <a href="/logout" class="user-dropdown-item user-dropdown-link">🚪 Logout</a>
+    </div>
+    {% else %}
+    <a href="/login" class="nav-link" style="background:var(--rust);color:white">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page-header animate" style="--d:.05s">
+  <div class="page-label">Analytics · Performance Insights</div>
+  <h1 class="page-title">Prediction <em>Dashboard</em></h1>
+  <p class="page-sub">Monitor your model performance and review all historical predictions.</p>
+</div>
+
+<div class="main">
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card animate" style="--d:.1s">
+      <div class="stat-card-icon">📊</div>
+      <div class="stat-card-title">Total Predictions</div>
+      <div class="stat-card-value" id="totalPredictions">0</div>
+      <div class="stat-card-sub">All-time predictions made</div>
+    </div>
+
+    <div class="stat-card animate" style="--d:.15s">
+      <div class="stat-card-icon">⚙️</div>
+      <div class="stat-card-title">Avg Cylinders</div>
+      <div class="stat-card-value" id="avgCylinders">0</div>
+      <div class="stat-card-sub">Average engine size</div>
+    </div>
+
+    <div class="stat-card animate" style="--d:.2s">
+      <div class="stat-card-icon">⚡</div>
+      <div class="stat-card-title">Avg Horsepower</div>
+      <div class="stat-card-value" id="avgHorsepower">0</div>
+      <div class="stat-card-sub">Average power output</div>
+    </div>
+
+    <div class="stat-card animate" style="--d:.25s">
+      <div class="stat-card-icon">⚖️</div>
+      <div class="stat-card-title">Avg Weight</div>
+      <div class="stat-card-value" id="avgWeight">0</div>
+      <div class="stat-card-sub">Average in lbs</div>
+    </div>
+  </div>
+
+  <!-- Predictions Table -->
+  <div class="data-section animate" style="--d:.3s">
+    <div class="data-header">
+      <h2>📋 All Predictions</h2>
+      <p>Complete history of model predictions with vehicle specifications</p>
+    </div>
+    <div class="data-body">
+      <table id="predictionsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cylinders</th>
+            <th>Displacement</th>
+            <th>Horsepower</th>
+            <th>Weight (lbs)</th>
+            <th>Predicted MPG</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="7" class="no-data">No predictions yet</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Fetch and display data
+  async function loadData() {
+    try {
+      const response = await fetch('/history');
+      const data = await response.json();
+      
+      if (!data || data.length === 0) {
+        return;
+      }
+
+      // Calculate statistics
+      const totalPredictions = data.length;
+      const avgCylinders = (data.reduce((sum, d) => sum + d.cylinders, 0) / data.length).toFixed(1);
+      const avgHorsepower = (data.reduce((sum, d) => sum + d.horsepower, 0) / data.length).toFixed(0);
+      const avgWeight = (data.reduce((sum, d) => sum + d.weight, 0) / data.length).toFixed(0);
+
+      // Update stats
+      document.getElementById('totalPredictions').textContent = totalPredictions;
+      document.getElementById('avgCylinders').textContent = avgCylinders;
+      document.getElementById('avgHorsepower').textContent = avgHorsepower;
+      document.getElementById('avgWeight').textContent = avgWeight;
+
+      // Populate table
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = data.map(row => `
+        <tr>
+          <td>${row.id}</td>
+          <td>${row.cylinders}</td>
+          <td>${row.displacement || '—'}</td>
+          <td>${row.horsepower}</td>
+          <td>${row.weight}</td>
+          <td><strong>${row.predicted_mpg} MPG</strong></td>
+          <td>${new Date(row.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  }
+
+  // Load data on page load
+  loadData();
+  
+  // Refresh data every 5 seconds
+  setInterval(loadData, 5000);
+
+  // User dropdown
+  function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('open');
+    }
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdown');
+    const avatarBtn = document.getElementById('userAvatarBtn');
+    if (dropdown && !dropdown.contains(e.target) && e.target !== avatarBtn) {
+      dropdown.classList.remove('open');
+    }
+  });
+</script>
+</body>
+</html>

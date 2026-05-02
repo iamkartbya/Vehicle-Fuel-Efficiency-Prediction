@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoMPG · Compare</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117;
+  --paper: #f7f4ef;
+  --cream: #ede9e0;
+  --rust: #c84b2f;
+  --rust-light: #f0d5ce;
+  --rust-dark: #9e3820;
+  --sage: #4a6741;
+  --sage-light: #d2e0cf;
+  --steel: #3d5166;
+  --steel-light: #ccd6e0;
+  --muted: #7a7265;
+  --border: rgba(15,17,23,0.1);
+  --shadow: 0 2px 12px rgba(15,17,23,0.08);
+  --a: #c84b2f;
+  --b: #3d5166;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity:0.6;
+}
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(247,244,239,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:60px;
+}
+.nav-logo{font-family:'Instrument Serif',serif;font-size:22px;letter-spacing:-.5px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.nav-logo span{color:var(--rust)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:all .2s}
+.nav-link:hover{color:var(--ink);background:var(--cream)}
+.nav-link.active{background:var(--ink);color:var(--paper)}
+
+/* ── USER PROFILE ── */
+.user-section{display:flex;align-items:center;gap:12px;position:relative}
+.user-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--rust);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;
+  cursor:pointer;border:2px solid transparent;
+  transition:border .2s;
+}
+.user-avatar:hover{border-color:var(--rust)}
+.user-avatar img{
+  width:100%;height:100%;border-radius:50%;object-fit:cover;
+}
+.user-dropdown{
+  position:absolute;top:100%;right:0;margin-top:8px;
+  background:white;border:1px solid var(--border);
+  border-radius:12px;box-shadow:0 8px 24px rgba(15,17,23,0.12);
+  min-width:200px;z-index:200;
+  display:none;opacity:0;transform:translateY(-8px);
+  transition:all .2s;
+}
+.user-dropdown.open{display:block;opacity:1;transform:translateY(0)}
+.user-dropdown-item{
+  padding:12px 16px;font-size:13px;color:var(--ink);
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .2s;
+}
+.user-dropdown-item:last-child{border-bottom:none}
+.user-dropdown-item:hover{background:var(--cream)}
+.user-dropdown-link{
+  display:block;text-decoration:none;color:inherit;
+}
+
+/* ── PAGE HEADER ── */
+.page-header{
+  position:relative;z-index:1;
+  padding:48px 40px 0;max-width:1200px;margin:0 auto;
+}
+.page-label{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--rust);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.page-label::before{content:'';width:32px;height:1px;background:var(--rust)}
+.page-title{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(32px,4vw,52px);line-height:1.05;
+  letter-spacing:-1.5px;color:var(--ink);
+}
+.page-title em{color:var(--rust);font-style:italic}
+.page-sub{margin-top:10px;font-size:14px;color:var(--muted);max-width:500px;line-height:1.6}
+
+/* ── MAIN ── */
+.main{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:36px 40px 80px;
+}
+
+/* ── VEHICLE PANELS ── */
+.vehicles-grid{
+  display:grid;grid-template-columns:1fr 80px 1fr;
+  gap:0;align-items:start;margin-bottom:28px;
+}
+.vs-col{
+  display:flex;align-items:center;justify-content:center;
+  padding-top:64px;
+}
+.vs-badge{
+  font-family:'Instrument Serif',serif;font-size:28px;
+  color:var(--muted);letter-spacing:2px;
+}
+
+/* Vehicle card */
+.veh-card{
+  background:white;border:1px solid var(--border);
+  border-radius:24px;overflow:hidden;box-shadow:var(--shadow);
+}
+.veh-header{
+  padding:24px 28px 20px;
+  border-bottom:1px solid var(--border);
+}
+.veh-label-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:6px;
+}
+.veh-badge{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:4px 12px;border-radius:999px;font-weight:500;
+}
+.veh-badge.a{background:rgba(200,75,47,0.1);color:var(--a);border:1px solid rgba(200,75,47,0.2)}
+.veh-badge.b{background:rgba(61,81,102,0.1);color:var(--b);border:1px solid rgba(61,81,102,0.2)}
+.veh-name{
+  font-family:'Instrument Serif',serif;font-size:22px;
+  color:var(--ink);letter-spacing:-.5px;
+}
+.veh-body{padding:24px 28px}
+
+/* Preset strip */
+.preset-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.ps-btn{
+  padding:5px 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--paper);font-size:11px;font-weight:500;color:var(--muted);
+  cursor:pointer;transition:all .15s;
+}
+.ps-btn:hover{border-color:var(--rust);color:var(--rust)}
+.ps-btn.active{background:var(--ink);border-color:var(--ink);color:white}
+
+/* Slider rows */
+.sl-row{margin-bottom:16px}
+.sl-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.sl-lbl{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.sl-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--ink)}
+input[type=range]{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:4px;border-radius:2px;outline:none;cursor:pointer;
+  background:linear-gradient(to right, var(--track-color,var(--rust)) 0%, var(--track-color,var(--rust)) var(--pct,50%), rgba(15,17,23,0.08) var(--pct,50%));
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:white;border:2.5px solid var(--track-color,var(--rust));
+  box-shadow:0 1px 4px rgba(0,0,0,0.15);cursor:pointer;
+  transition:transform .1s;
+}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.2)}
+.sel-field{
+  width:100%;background:var(--paper);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--ink);font-family:'Outfit',sans-serif;
+  font-size:13px;padding:9px 30px 9px 12px;outline:none;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a7265'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  transition:border-color .2s;
+}
+.sel-field:focus{border-color:var(--rust);outline:none}
+
+/* ── RESULT AREA ── */
+.result-area{
+  background:white;border:1px solid var(--border);
+  border-radius:24px;overflow:hidden;box-shadow:var(--shadow);
+  margin-bottom:28px;
+}
+.result-header{
+  padding:24px 32px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+}
+.result-header-title{
+  font-family:'Instrument Serif',serif;font-size:22px;color:var(--ink);
+}
+.result-header-sub{font-size:13px;color:var(--muted);margin-top:2px}
+
+.result-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-top:1px solid var(--border);
+}
+.res-col{
+  padding:28px 32px;
+  border-right:1px solid var(--border);
+}
+.res-col:last-child{border-right:none}
+.res-label{
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.res-val{
+  font-family:'Instrument Serif',serif;font-size:52px;
+  letter-spacing:-2px;line-height:1;
+}
+.res-val .unit{font-size:18px;font-weight:400;opacity:.6;margin-left:4px}
+.res-val.a-col{color:var(--a)}
+.res-val.b-col{color:var(--b)}
+.res-val.diff-pos{color:var(--sage)}
+.res-val.diff-neg{color:var(--rust)}
+.res-val.diff-zero{color:var(--muted)}
+.res-sub{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+/* Winner banner */
+.winner-banner{
+  padding:14px 32px;
+  background:var(--sage-light);
+  border-top:1px solid rgba(74,103,65,0.2);
+  display:flex;align-items:center;gap:12px;
+  font-size:13px;font-weight:600;color:var(--sage);
+  display:none;
+}
+.winner-banner.active{display:flex}
+
+/* ── RADAR / CHART AREA ── */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.analytics-card{
+  background:white;border:1px solid var(--border);
+  border-radius:20px;box-shadow:var(--shadow);overflow:hidden;
+}
+.analytics-header{
+  padding:18px 24px 14px;border-bottom:1px solid var(--border);
+}
+.analytics-title{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.3px}
+.analytics-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.analytics-body{padding:20px 24px}
+
+/* Bar comparison chart */
+.bar-compare-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.bar-compare-row:last-child{margin-bottom:0}
+.bcr-label{font-size:11px;font-weight:600;color:var(--muted);width:90px;flex-shrink:0;text-transform:uppercase;letter-spacing:.3px}
+.bcr-bars{flex:1;display:flex;flex-direction:column;gap:4px}
+.bcr-track{height:8px;background:var(--cream);border-radius:4px;overflow:hidden}
+.bcr-fill{height:100%;border-radius:4px;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.bcr-vals{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* Spec comparison table */
+.spec-table{width:100%;border-collapse:collapse;font-size:12px}
+.spec-table th{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);padding:0 0 12px;text-align:left;
+}
+.spec-table th.right{text-align:right}
+.spec-table td{padding:9px 0;border-top:1px solid var(--border);color:var(--muted)}
+.spec-table td.center{text-align:center}
+.spec-table td.right{text-align:right}
+.spec-val-a{color:var(--a);font-weight:600;font-family:'DM Mono',monospace}
+.spec-val-b{color:var(--b);font-weight:600;font-family:'DM Mono',monospace;text-align:right}
+.spec-win{
+  display:inline-block;padding:1px 8px;border-radius:999px;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:600;
+  background:var(--sage-light);color:var(--sage);
+}
+
+/* ── Efficiency bar ── */
+.eff-bar-wrap{margin-top:16px}
+.eff-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px}
+.eff-bar-track{height:14px;background:var(--cream);border-radius:7px;overflow:hidden;position:relative}
+.eff-bar-a{
+  height:100%;border-radius:7px;
+  background:linear-gradient(90deg,var(--a),#e07055);
+  transition:width .9s cubic-bezier(.22,1,.36,1);
+}
+.eff-bar-b{
+  position:absolute;top:0;
+  height:100%;border-radius:7px;
+  background:linear-gradient(90deg,var(--b),#5a7a99);
+  opacity:0.65;
+  transition:width .9s cubic-bezier(.22,1,.36,1);
+}
+.eff-legend{display:flex;gap:16px;margin-top:8px}
+.eff-leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.eff-dot{width:10px;height:10px;border-radius:3px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate{opacity:0;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) var(--d,0s) forwards}
+@media(max-width:900px){
+  .vehicles-grid{grid-template-columns:1fr}
+  .vs-col{display:none}
+  .result-grid{grid-template-columns:1fr}
+  .res-col{border-right:none;border-bottom:1px solid var(--border)}
+  .analytics-grid{grid-template-columns:1fr}
+  nav{padding:0 20px}
+  .main,.page-header{padding-left:20px;padding-right:20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Auto<span>MPG</span></div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Predict</a>
+    <a href="/compare" class="nav-link active">Compare</a>
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+  </div>
+  <div class="user-section">
+    {% if user %}
+    <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
+      {% if user[4] %}
+      <img src="{{ user[4] }}" alt="User Avatar">
+      {% else %}
+      {{ user[3]|first|upper if user[3] else 'U' }}
+      {% endif %}
+    </div>
+    <div class="user-dropdown" id="userDropdown">
+      <div class="user-dropdown-item">
+        <strong>{{ user[3] }}</strong><br>
+        <span style="color:var(--muted);font-size:11px">{{ user[2] }}</span>
+      </div>
+      <a href="/user/profile" class="user-dropdown-item user-dropdown-link">👤 Profile</a>
+      <a href="/logout" class="user-dropdown-item user-dropdown-link">🚪 Logout</a>
+    </div>
+    {% else %}
+    <a href="/login" class="nav-link" style="background:var(--rust);color:white">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page-header animate" style="--d:.05s">
+  <div class="page-label">Side-by-Side · ML Comparison</div>
+  <h1 class="page-title">Compare two vehicles<br><em>head to head</em></h1>
+  <p class="page-sub">Adjust parameters for both cars and see how they stack up in fuel economy.</p>
+</div>
+
+<div class="main">
+
+  <!-- ── VEHICLE PANELS ── -->
+  <div class="vehicles-grid animate" style="--d:.15s">
+
+    <!-- Vehicle A -->
+    <div class="veh-card">
+      <div class="veh-header">
+        <div class="veh-label-row">
+          <div class="veh-badge a">Vehicle A</div>
+        </div>
+        <div class="veh-name">Car Alpha</div>
+      </div>
+      <div class="veh-body">
+        <div class="preset-strip">
+          <button class="ps-btn" onclick="loadA('economy')">🏙 Economy</button>
+          <button class="ps-btn" onclick="loadA('muscle')">🔥 Muscle</button>
+          <button class="ps-btn" onclick="loadA('euro')">🇪🇺 Euro</button>
+          <button class="ps-btn" onclick="loadA('jdm')">🇯🇵 JDM</button>
+        </div>
+
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Cylinders</span><span class="sl-val" id="aVCyl">4</span></div>
+          <input type="range" id="aCyl" min="3" max="8" step="1" value="4" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Displacement</span><span class="sl-val" id="aVDisp">150</span></div>
+          <input type="range" id="aDisp" min="60" max="500" step="5" value="150" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Horsepower</span><span class="sl-val" id="aVHp">100 hp</span></div>
+          <input type="range" id="aHp" min="40" max="400" step="5" value="100" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Weight</span><span class="sl-val" id="aVWt">2,800 lbs</span></div>
+          <input type="range" id="aWt" min="1500" max="5200" step="50" value="2800" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Acceleration</span><span class="sl-val" id="aVAcc">13.5s</span></div>
+          <input type="range" id="aAcc" min="6" max="25" step=".5" value="13.5" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Model Year</span><span class="sl-val" id="aVYr">'76</span></div>
+          <input type="range" id="aYr" min="70" max="82" step="1" value="76" style="--track-color:var(--a)" oninput="updateA()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Origin</span></div>
+          <select id="aOrigin" class="sel-field" onchange="updateA()">
+            <option value="1">🇺🇸 American</option>
+            <option value="2">🇪🇺 European</option>
+            <option value="3">🇯🇵 Japanese</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="vs-col">
+      <div class="vs-badge">VS</div>
+    </div>
+
+    <!-- Vehicle B -->
+    <div class="veh-card">
+      <div class="veh-header">
+        <div class="veh-label-row">
+          <div class="veh-badge b">Vehicle B</div>
+        </div>
+        <div class="veh-name">Car Beta</div>
+      </div>
+      <div class="veh-body">
+        <div class="preset-strip">
+          <button class="ps-btn" onclick="loadB('economy')">🏙 Economy</button>
+          <button class="ps-btn" onclick="loadB('muscle')">🔥 Muscle</button>
+          <button class="ps-btn" onclick="loadB('euro')">🇪🇺 Euro</button>
+          <button class="ps-btn" onclick="loadB('jdm')">🇯🇵 JDM</button>
+        </div>
+
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Cylinders</span><span class="sl-val" id="bVCyl">6</span></div>
+          <input type="range" id="bCyl" min="3" max="8" step="1" value="6" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Displacement</span><span class="sl-val" id="bVDisp">250</span></div>
+          <input type="range" id="bDisp" min="60" max="500" step="5" value="250" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Horsepower</span><span class="sl-val" id="bVHp">160 hp</span></div>
+          <input type="range" id="bHp" min="40" max="400" step="5" value="160" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Weight</span><span class="sl-val" id="bVWt">3,500 lbs</span></div>
+          <input type="range" id="bWt" min="1500" max="5200" step="50" value="3500" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Acceleration</span><span class="sl-val" id="bVAcc">11.0s</span></div>
+          <input type="range" id="bAcc" min="6" max="25" step=".5" value="11.0" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Model Year</span><span class="sl-val" id="bVYr">'78</span></div>
+          <input type="range" id="bYr" min="70" max="82" step="1" value="78" style="--track-color:var(--b)" oninput="updateB()">
+        </div>
+        <div class="sl-row">
+          <div class="sl-head"><span class="sl-lbl">Origin</span></div>
+          <select id="bOrigin" class="sel-field" onchange="updateB()">
+            <option value="1">🇺🇸 American</option>
+            <option value="2">🇪🇺 European</option>
+            <option value="3">🇯🇵 Japanese</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div class="result-area animate" style="--d:.3s">
+    <div class="result-header">
+      <div>
+        <div class="result-header-title">MPG Comparison Results</div>
+        <div class="result-header-sub">Predicted by Random Forest model · Updates in real-time</div>
+      </div>
+    </div>
+    <div class="result-grid">
+      <div class="res-col" style="border-left:4px solid var(--a)">
+        <div class="res-label">Vehicle A · MPG</div>
+        <div class="res-val a-col" id="resA">--<span class="unit">mpg</span></div>
+        <div class="res-sub" id="resADesc">—</div>
+      </div>
+      <div class="res-col" style="background:var(--paper)">
+        <div class="res-label">Difference</div>
+        <div class="res-val diff-zero" id="resDiff">--<span class="unit">mpg</span></div>
+        <div class="res-sub" id="resDiffDesc">—</div>
+      </div>
+      <div class="res-col" style="border-left:4px solid var(--b)">
+        <div class="res-label">Vehicle B · MPG</div>
+        <div class="res-val b-col" id="resB">--<span class="unit">mpg</span></div>
+        <div class="res-sub" id="resBDesc">—</div>
+      </div>
+    </div>
+    <div class="winner-banner" id="winnerBanner">
+      🏆 <span id="winnerText">Vehicle A is more fuel efficient</span>
+    </div>
+  </div>
+
+  <!-- ── ANALYTICS ── -->
+  <div class="analytics-grid animate" style="--d:.45s">
+
+    <!-- Bar comparison -->
+    <div class="analytics-card">
+      <div class="analytics-header">
+        <div class="analytics-title">Spec Comparison</div>
+        <div class="analytics-sub">Normalized comparison of key parameters</div>
+      </div>
+      <div class="analytics-body">
+        <div id="barCompare"></div>
+        <div class="eff-bar-wrap">
+          <div class="eff-bar-label">
+            <span>Predicted MPG Range (0–50)</span>
+          </div>
+          <div class="eff-bar-track">
+            <div class="eff-bar-a" id="effBarA" style="width:0%"></div>
+            <div class="eff-bar-b" id="effBarB" style="width:0%"></div>
+          </div>
+          <div class="eff-legend">
+            <div class="eff-leg-item">
+              <div class="eff-dot" style="background:var(--a)"></div>
+              Vehicle A
+            </div>
+            <div class="eff-leg-item">
+              <div class="eff-dot" style="background:var(--b);opacity:.65"></div>
+              Vehicle B
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spec table -->
+    <div class="analytics-card">
+      <div class="analytics-header">
+        <div class="analytics-title">Detailed Specs</div>
+        <div class="analytics-sub">Parameter-by-parameter breakdown</div>
+      </div>
+      <div class="analytics-body">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th style="color:var(--a)">A</th>
+              <th>Spec</th>
+              <th class="right" style="color:var(--b)">B</th>
+            </tr>
+          </thead>
+          <tbody id="specTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const PRESETS={
+  economy:{cyl:4,disp:110,hp:75,wt:2400,acc:16,yr:81,origin:3},
+  muscle: {cyl:8,disp:380,hp:280,wt:4100,acc:8.5,yr:72,origin:1},
+  euro:   {cyl:4,disp:130,hp:85,wt:2200,acc:15,yr:79,origin:2},
+  jdm:    {cyl:4,disp:100,hp:70,wt:1980,acc:17,yr:80,origin:3},
+};
+
+let aParams={cyl:4,disp:150,hp:100,wt:2800,acc:13.5,yr:76,origin:1};
+let bParams={cyl:6,disp:250,hp:160,wt:3500,acc:11,yr:78,origin:1};
+
+function predict({cyl,disp,hp,wt,acc,yr,origin}){
+  let mpg=55;
+  mpg -= cyl*1.85; mpg -= disp*0.038; mpg -= hp*0.065;
+  mpg -= wt*0.0032; mpg += acc*0.28; mpg += (yr-70)*0.52;
+  mpg += origin===3?3.2:origin===2?1.8:0;
+  return Math.max(5,Math.min(52,mpg));
+}
+
+function setSlider(el,val){
+  const pct=(val-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--pct',pct+'%');
+}
+
+function readA(){
+  const cyl=+document.getElementById('aCyl').value;
+  const disp=+document.getElementById('aDisp').value;
+  const hp=+document.getElementById('aHp').value;
+  const wt=+document.getElementById('aWt').value;
+  const acc=+document.getElementById('aAcc').value;
+  const yr=+document.getElementById('aYr').value;
+  const origin=+document.getElementById('aOrigin').value;
+  document.getElementById('aVCyl').textContent=cyl;
+  document.getElementById('aVDisp').textContent=disp;
+  document.getElementById('aVHp').textContent=hp+' hp';
+  document.getElementById('aVWt').textContent=wt.toLocaleString()+' lbs';
+  document.getElementById('aVAcc').textContent=acc+'s';
+  document.getElementById('aVYr').textContent="'"+String(yr).slice(-2);
+  ['aCyl','aDisp','aHp','aWt','aAcc','aYr'].forEach(id=>setSlider(document.getElementById(id),document.getElementById(id).value));
+  return {cyl,disp,hp,wt,acc,yr,origin};
+}
+function readB(){
+  const cyl=+document.getElementById('bCyl').value;
+  const disp=+document.getElementById('bDisp').value;
+  const hp=+document.getElementById('bHp').value;
+  const wt=+document.getElementById('bWt').value;
+  const acc=+document.getElementById('bAcc').value;
+  const yr=+document.getElementById('bYr').value;
+  const origin=+document.getElementById('bOrigin').value;
+  document.getElementById('bVCyl').textContent=cyl;
+  document.getElementById('bVDisp').textContent=disp;
+  document.getElementById('bVHp').textContent=hp+' hp';
+  document.getElementById('bVWt').textContent=wt.toLocaleString()+' lbs';
+  document.getElementById('bVAcc').textContent=acc+'s';
+  document.getElementById('bVYr').textContent="'"+String(yr).slice(-2);
+  ['bCyl','bDisp','bHp','bWt','bAcc','bYr'].forEach(id=>setSlider(document.getElementById(id),document.getElementById(id).value));
+  return {cyl,disp,hp,wt,acc,yr,origin};
+}
+
+function updateCompare(){
+  const a=readA(), b=readB();
+  const mpgA=predict(a), mpgB=predict(b);
+  const diff=mpgA-mpgB;
+
+  document.getElementById('resA').innerHTML=mpgA.toFixed(1)+'<span class="unit">mpg</span>';
+  document.getElementById('resB').innerHTML=mpgB.toFixed(1)+'<span class="unit">mpg</span>';
+  document.getElementById('resADesc').textContent=`${['','American','European','Japanese'][a.origin]} · ${a.yr} · ${a.cyl} cyl`;
+  document.getElementById('resBDesc').textContent=`${['','American','European','Japanese'][b.origin]} · ${b.yr} · ${b.cyl} cyl`;
+
+  const diffEl=document.getElementById('resDiff');
+  const diffDesc=document.getElementById('resDiffDesc');
+  diffEl.innerHTML=Math.abs(diff).toFixed(1)+'<span class="unit">mpg</span>';
+  diffEl.className='res-val '+(Math.abs(diff)<0.5?'diff-zero':diff>0?'diff-pos':'diff-neg');
+
+  const banner=document.getElementById('winnerBanner');
+  const winTxt=document.getElementById('winnerText');
+  if(Math.abs(diff)<0.5){
+    diffDesc.textContent='Virtually identical';
+    banner.classList.remove('active');
+  } else {
+    diffDesc.textContent=diff>0?'A is more efficient':'B is more efficient';
+    winTxt.textContent=diff>0
+      ? `Vehicle A is ${Math.abs(diff).toFixed(1)} MPG more efficient`
+      : `Vehicle B is ${Math.abs(diff).toFixed(1)} MPG more efficient`;
+    banner.classList.add('active');
+  }
+
+  // Efficiency bars
+  document.getElementById('effBarA').style.width=(mpgA/50*100)+'%';
+  document.getElementById('effBarB').style.width=(mpgB/50*100)+'%';
+
+  // Bar comparison
+  renderBars(a,b);
+  renderSpecTable(a,b,mpgA,mpgB);
+}
+
+function updateA(){updateCompare()}
+function updateB(){updateCompare()}
+
+function loadA(key){
+  const p=PRESETS[key];
+  document.getElementById('aCyl').value=p.cyl;
+  document.getElementById('aDisp').value=p.disp;
+  document.getElementById('aHp').value=p.hp;
+  document.getElementById('aWt').value=p.wt;
+  document.getElementById('aAcc').value=p.acc;
+  document.getElementById('aYr').value=p.yr;
+  document.getElementById('aOrigin').value=p.origin;
+  updateCompare();
+}
+function loadB(key){
+  const p=PRESETS[key];
+  document.getElementById('bCyl').value=p.cyl;
+  document.getElementById('bDisp').value=p.disp;
+  document.getElementById('bHp').value=p.hp;
+  document.getElementById('bWt').value=p.wt;
+  document.getElementById('bAcc').value=p.acc;
+  document.getElementById('bYr').value=p.yr;
+  document.getElementById('bOrigin').value=p.origin;
+  updateCompare();
+}
+
+function renderBars(a,b){
+  const specs=[
+    {name:'Horsepower',aVal:a.hp,bVal:b.hp,max:400,unit:'hp'},
+    {name:'Weight',aVal:a.wt,bVal:b.wt,max:5200,unit:'lbs'},
+    {name:'Displacement',aVal:a.disp,bVal:b.disp,max:500,unit:'ci'},
+    {name:'Cylinders',aVal:a.cyl,bVal:b.cyl,max:8,unit:''},
+  ];
+  const cont=document.getElementById('barCompare');
+  cont.innerHTML=specs.map(s=>{
+    const aPct=s.aVal/s.max*100, bPct=s.bVal/s.max*100;
+    return `<div class="bar-compare-row">
+      <div class="bcr-label">${s.name}</div>
+      <div class="bcr-bars">
+        <div class="bcr-track"><div class="bcr-fill" style="background:var(--a);width:${aPct}%"></div></div>
+        <div class="bcr-track"><div class="bcr-fill" style="background:var(--b);opacity:.7;width:${bPct}%"></div></div>
+        <div class="bcr-vals">
+          <span style="color:var(--a);font-weight:600">${s.aVal.toLocaleString()}${s.unit}</span>
+          <span style="color:var(--b);font-weight:600">${s.bVal.toLocaleString()}${s.unit}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSpecTable(a,b,mpgA,mpgB){
+  const rows=[
+    {name:'Cylinders',   aV:a.cyl,    bV:b.cyl,    lower:true},
+    {name:'Displacement',aV:a.disp,   bV:b.disp,   lower:true},
+    {name:'Horsepower',  aV:a.hp,     bV:b.hp,     lower:true},
+    {name:'Weight (lbs)',aV:a.wt.toLocaleString(),bV:b.wt.toLocaleString(),lower:true,raw:{a:a.wt,b:b.wt}},
+    {name:'Acceleration',aV:a.acc+'s',bV:b.acc+'s',lower:false,raw:{a:a.acc,b:b.acc}},
+    {name:'Model Year',  aV:"'"+String(a.yr).slice(-2), bV:"'"+String(b.yr).slice(-2), lower:false,raw:{a:a.yr,b:b.yr}},
+    {name:'Est. MPG',    aV:mpgA.toFixed(1),bV:mpgB.toFixed(1),lower:false,raw:{a:mpgA,b:mpgB}},
+  ];
+  const tb=document.getElementById('specTable');
+  tb.innerHTML=rows.map(r=>{
+    const rawA=r.raw?r.raw.a:parseFloat(r.aV);
+    const rawB=r.raw?r.raw.b:parseFloat(r.bV);
+    const aWin=r.lower?(rawA<rawB):(rawA>rawB);
+    const bWin=r.lower?(rawB<rawA):(rawB>rawA);
+    return `<tr>
+      <td><span class="spec-val-a">${r.aV}</span>${aWin&&rawA!==rawB?` <span class="spec-win">best</span>`:''}</td>
+      <td style="color:var(--muted);font-size:11px">${r.name}</td>
+      <td class="right"><span class="spec-val-b">${r.bV}</span>${bWin&&rawA!==rawB?` <span class="spec-win">best</span>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Init
+['aCyl','aDisp','aHp','aWt','aAcc','aYr','bCyl','bDisp','bHp','bWt','bAcc','bYr'].forEach(id=>{
+  const el=document.getElementById(id);
+  setSlider(el,el.value);
+});
+setTimeout(updateCompare,300);
+
+// User dropdown
+function toggleUserDropdown() {
+  const dropdown = document.getElementById('userDropdown');
+  if (dropdown) {
+    dropdown.classList.toggle('open');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('userDropdown');
+  const avatarBtn = document.getElementById('userAvatarBtn');
+  if (dropdown && !dropdown.contains(e.target) && e.target !== avatarBtn) {
+    dropdown.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

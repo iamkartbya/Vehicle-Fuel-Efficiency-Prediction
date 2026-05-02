@@ -1,0 +1,11 @@
+flask
+flask-login
+flask-session
+pandas
+numpy
+scikit-learn
+matplotlib
+requests
+authlib
+python-dotenv
+cryptography
