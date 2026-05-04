@@ -46,7 +46,7 @@ nav{
   border-bottom:1px solid var(--border);
   padding:0 40px;
   display:flex;align-items:center;justify-content:space-between;
-  height:60px;
+  height:80px;
 }
 .nav-logo{
   font-family:'Instrument Serif',serif;
@@ -56,8 +56,8 @@ nav{
 .nav-logo span{color:var(--rust)}
 .nav-links{display:flex;gap:4px}
 .nav-link{
-  padding:6px 16px;border-radius:999px;
-  font-size:13px;font-weight:500;
+  padding:12px 28px;border-radius:999px;
+  font-size:16px;font-weight:600;
   color:var(--muted);text-decoration:none;
   transition:all .2s;
 }
@@ -427,12 +427,11 @@ nav{
 
 <nav>
   <div class="nav-logo">Auto<span>MPG</span></div>
-  <div class="nav-links">
+  <div class="nav-links" style="margin-left:auto">
     <a href="/" class="nav-link active">Predict</a>
     <a href="/compare" class="nav-link">Compare</a>
     <a href="/dashboard" class="nav-link">Dashboard</a>
   </div>
-
 </nav>
 
 <div class="hero animate" style="--d:.05s">

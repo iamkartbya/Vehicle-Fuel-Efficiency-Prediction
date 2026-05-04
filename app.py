@@ -21,6 +21,7 @@ with open("model/model.pkl", "rb") as f:
     payload = pickle.load(f)
     MODEL  = payload["model"]
     SCALER = payload["scaler"]
+    FEATURE_NAMES = payload.get("feature_names", ["cylinders", "displacement", "horsepower", "weight", "acceleration", "model_year", "origin"])
 
 init_db()
 

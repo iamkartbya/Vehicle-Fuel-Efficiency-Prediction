@@ -28,6 +28,9 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 
+# Store feature names for later use
+feature_names = X.columns.tolist()
+
 rf = RandomForestRegressor(n_estimators=100, random_state=42)
 rf.fit(X_train_scaled, y_train)
 
@@ -42,8 +45,8 @@ plt.tight_layout()
 plt.savefig("static/feature_importance.png")
 plt.close()
 
-# Save model + scaler together
+# Save model + scaler + feature names together
 with open("model/model.pkl", "wb") as f:
-    pickle.dump({"model": rf, "scaler": scaler}, f)
+    pickle.dump({"model": rf, "scaler": scaler, "feature_names": feature_names}, f)
 
 print("Model saved to model/model.pkl")

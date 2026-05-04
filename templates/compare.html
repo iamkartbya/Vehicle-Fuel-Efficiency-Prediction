@@ -34,12 +34,12 @@ nav{
   position:sticky;top:0;z-index:100;
   background:rgba(247,244,239,0.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
-  padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:60px;
+  padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:80px;
 }
 .nav-logo{font-family:'Instrument Serif',serif;font-size:22px;letter-spacing:-.5px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .nav-logo span{color:var(--rust)}
 .nav-links{display:flex;gap:4px}
-.nav-link{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:all .2s}
+.nav-link{padding:12px 28px;border-radius:999px;font-size:16px;font-weight:600;color:var(--muted);text-decoration:none;transition:all .2s}
 .nav-link:hover{color:var(--ink);background:var(--cream)}
 .nav-link.active{background:var(--ink);color:var(--paper)}
 
@@ -311,31 +311,10 @@ input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.2)}
 
 <nav>
   <div class="nav-logo">Auto<span>MPG</span></div>
-  <div class="nav-links">
+  <div class="nav-links" style="margin-left:auto">
     <a href="/" class="nav-link">Predict</a>
     <a href="/compare" class="nav-link active">Compare</a>
     <a href="/dashboard" class="nav-link">Dashboard</a>
-  </div>
-  <div class="user-section">
-    {% if user %}
-    <div class="user-avatar" id="userAvatarBtn" onclick="toggleUserDropdown()">
-      {% if user[4] %}
-      <img src="{{ user[4] }}" alt="User Avatar">
-      {% else %}
-      {{ user[3]|first|upper if user[3] else 'U' }}
-      {% endif %}
-    </div>
-    <div class="user-dropdown" id="userDropdown">
-      <div class="user-dropdown-item">
-        <strong>{{ user[3] }}</strong><br>
-        <span style="color:var(--muted);font-size:11px">{{ user[2] }}</span>
-      </div>
-      <a href="/user/profile" class="user-dropdown-item user-dropdown-link">👤 Profile</a>
-      <a href="/logout" class="user-dropdown-item user-dropdown-link">🚪 Logout</a>
-    </div>
-    {% else %}
-    <a href="/login" class="nav-link" style="background:var(--rust);color:white">Login</a>
-    {% endif %}
   </div>
 </nav>
 
