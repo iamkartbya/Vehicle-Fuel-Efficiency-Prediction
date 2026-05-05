@@ -3,6 +3,6 @@ services:
     name: vehicle-fuel-efficiency
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python app.py"
-    pythonVersion: 3.10.13
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    runtime: python3.10
