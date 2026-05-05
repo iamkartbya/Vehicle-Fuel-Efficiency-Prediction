@@ -42,11 +42,11 @@ print(f"RMSE     : {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
 feat_imp = pd.Series(rf.feature_importances_, index=X.columns).sort_values()
 feat_imp.plot(kind='barh', title='Feature Importance')
 plt.tight_layout()
-plt.savefig("static/feature_importance.png")
+plt.savefig("../static/feature_importance.png")
 plt.close()
 
 # Save model + scaler + feature names together
-with open("model/model.pkl", "wb") as f:
+with open("model.pkl", "wb") as f:
     pickle.dump({"model": rf, "scaler": scaler, "feature_names": feature_names}, f)
 
-print("Model saved to model/model.pkl")
+print("Model saved to model.pkl")
